@@ -22,7 +22,10 @@ pub struct System {
 
 impl Vector {
     pub fn new(n: usize) -> Self {
-        Vector { values: Vec::new(), n: n }
+        Vector {
+            values: Vec::new(),
+            n,
+        }
     }
 
     pub fn from_vec(values: Vec<f64>) -> Self {
@@ -37,19 +40,22 @@ impl Vector {
 
     pub fn from_i32(values: Vec<i32>) -> Self {
         let n = values.len();
-        Vector { values: values.iter().map(|&x| x as f64).collect(), n }
+        Vector {
+            values: values.iter().map(|&x| x as f64).collect(),
+            n,
+        }
     }
 
     pub fn size(&self) -> usize {
-        return self.n;
+        self.n
     }
 
     pub fn get(&self, idx: usize) -> f64 {
-        if idx >= self.n  {
+        if idx >= self.n {
             panic!("Index out of bounds");
         }
 
-        return self.values[idx];
+        self.values[idx]
     }
 
     pub fn set(&mut self, idx: usize, value: f64) {
@@ -63,13 +69,24 @@ impl Vector {
 
 impl Matrix {
     pub fn new(n: usize, m: usize) -> Self {
-        Matrix { values: Vec::new(), n: n, m: m }
+        Matrix {
+            values: Vec::new(),
+            n,
+            m,
+        }
     }
 
     pub fn from_vec(values: Vec<Vec<f64>>) -> Self {
         let m = values.len();
         let n = values[0].len();
-        Matrix { values: values.iter().map(|x| Vector::from_vec(x.to_vec())).collect(), n, m }
+        Matrix {
+            values: values
+                .iter()
+                .map(|x| Vector::from_vec(x.to_vec()))
+                .collect(),
+            n,
+            m,
+        }
     }
 
     pub fn from_vector(values: Vec<Vector>) -> Self {
@@ -83,7 +100,7 @@ impl Matrix {
             panic!("Index out of bounds");
         }
 
-        return self.values[j].get(i);
+        self.values[j].get(i)
     }
 
     pub fn get_row(&self, i: usize) -> Vector {
@@ -92,7 +109,7 @@ impl Matrix {
         }
 
         // return the ith value of each vector
-        return Vector::from_vec(self.values.iter().map(|x| x.get(i)).collect());
+        Vector::from_vec(self.values.iter().map(|x| x.get(i)).collect())
     }
 
     pub fn get_col(&self, j: usize) -> Vector {
@@ -100,7 +117,7 @@ impl Matrix {
             panic!("Index out of bounds");
         }
 
-        return self.values[j].clone();
+        self.values[j].clone()
     }
 
     pub fn set(&mut self, i: usize, j: usize, value: f64) {
@@ -120,7 +137,7 @@ impl Matrix {
     }
 
     pub fn size(&self) -> (usize, usize) {
-        return (self.n, self.m);
+        (self.n, self.m)
     }
 
     pub fn det(&self) -> f64 {
@@ -145,7 +162,7 @@ impl Matrix {
             det += ai1 * ci1;
         }
 
-        return det;
+        det
     }
 
     pub fn is_rref(&self) -> bool {
@@ -165,7 +182,7 @@ impl Matrix {
             }
         }
 
-        return true;
+        true
     }
 }
 
@@ -176,7 +193,13 @@ impl System {
 
     pub fn new_homogenous(a: Matrix) -> Self {
         let m = a.size().1;
-        System { a, b: Vector { values: vec![0.0; m], n: m} }
+        System {
+            a,
+            b: Vector {
+                values: vec![0.0; m],
+                n: m,
+            },
+        }
     }
 
     pub fn solve(&self) -> Vector {
@@ -195,14 +218,24 @@ impl System {
 
 impl fmt::Display for Vector {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let values = self.values.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(", ");
+        let values = self
+            .values
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join(", ");
         write!(f, "[{}]", values)
     }
 }
 
 impl fmt::Display for Matrix {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let values = self.values.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n");
+        let values = self
+            .values
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join("\n");
         write!(f, "[{}]", values)
     }
 }
@@ -212,7 +245,12 @@ pub fn add_vector(a: &Vector, b: &Vector) -> Vector {
         panic!("Vector dimensions do not match");
     }
 
-    let values = a.values.iter().zip(b.values.iter()).map(|(a, b)| a + b).collect();
+    let values = a
+        .values
+        .iter()
+        .zip(b.values.iter())
+        .map(|(a, b)| a + b)
+        .collect();
     Vector { values, n: a.n }
 }
 
@@ -221,7 +259,12 @@ pub fn sub_vector(a: &Vector, b: &Vector) -> Vector {
         panic!("Vector dimensions do not match");
     }
 
-    let values = a.values.iter().zip(b.values.iter()).map(|(a, b)| a - b).collect();
+    let values = a
+        .values
+        .iter()
+        .zip(b.values.iter())
+        .map(|(a, b)| a - b)
+        .collect();
     Vector { values, n: a.n }
 }
 
@@ -230,7 +273,11 @@ pub fn dot(a: &Vector, b: &Vector) -> f64 {
         panic!("Vector dimensions do not match");
     }
 
-    a.values.iter().zip(b.values.iter()).map(|(a, b)| a * b).sum()
+    a.values
+        .iter()
+        .zip(b.values.iter())
+        .map(|(a, b)| a * b)
+        .sum()
 }
 
 pub fn scale_vector(a: &Vector, scalar: f64) -> Vector {
@@ -239,8 +286,16 @@ pub fn scale_vector(a: &Vector, scalar: f64) -> Vector {
 }
 
 pub fn scale_matrix(a: &Matrix, scalar: f64) -> Matrix {
-    let values = a.values.iter().map(|row| scale_vector(row, scalar)).collect();
-    Matrix { values, n: a.n, m: a.m }
+    let values = a
+        .values
+        .iter()
+        .map(|row| scale_vector(row, scalar))
+        .collect();
+    Matrix {
+        values,
+        n: a.n,
+        m: a.m,
+    }
 }
 
 pub fn add_matrix(a: &Matrix, b: &Matrix) -> Matrix {
@@ -248,8 +303,17 @@ pub fn add_matrix(a: &Matrix, b: &Matrix) -> Matrix {
         panic!("Matrix dimensions do not match");
     }
 
-    let values = a.values.iter().zip(b.values.iter()).map(|(a, b)| add_vector(a, b)).collect();
-    Matrix { values, n: a.n, m: a.m }
+    let values = a
+        .values
+        .iter()
+        .zip(b.values.iter())
+        .map(|(a, b)| add_vector(a, b))
+        .collect();
+    Matrix {
+        values,
+        n: a.n,
+        m: a.m,
+    }
 }
 
 pub fn sub_matrix(a: &Matrix, b: &Matrix) -> Matrix {
@@ -257,21 +321,42 @@ pub fn sub_matrix(a: &Matrix, b: &Matrix) -> Matrix {
         panic!("Matrix dimensions do not match");
     }
 
-    let values = a.values.iter().zip(b.values.iter()).map(|(a, b)| sub_vector(a, b)).collect();
-    Matrix { values, n: a.n, m: a.m }
+    let values = a
+        .values
+        .iter()
+        .zip(b.values.iter())
+        .map(|(a, b)| sub_vector(a, b))
+        .collect();
+    Matrix {
+        values,
+        n: a.n,
+        m: a.m,
+    }
 }
 
 pub fn transpose_vector(a: &Vector) -> Matrix {
-    let values = a.values.iter().map(|&x| Vector::from_vec(vec![x])).collect();
-    Matrix { values, n: a.n, m: 1 }
+    let values = a
+        .values
+        .iter()
+        .map(|&x| Vector::from_vec(vec![x]))
+        .collect();
+    Matrix {
+        values,
+        n: a.n,
+        m: 1,
+    }
 }
 
 pub fn transpose_matrix(a: &Matrix) -> Matrix {
-    let values = (0..a.m).map(|j| {
-        Vector::from_vec((0..a.n).map(|i| a.get(j, i)).collect())
-    }).collect();
+    let values = (0..a.m)
+        .map(|j| Vector::from_vec((0..a.n).map(|i| a.get(j, i)).collect()))
+        .collect();
 
-    Matrix { values, n: a.m, m: a.n }
+    Matrix {
+        values,
+        n: a.m,
+        m: a.n,
+    }
 }
 
 pub fn matrix_matrix_product(a: &Matrix, b: &Matrix) -> Matrix {
@@ -279,11 +364,21 @@ pub fn matrix_matrix_product(a: &Matrix, b: &Matrix) -> Matrix {
         panic!("Matrix dimensions do not match");
     }
 
-    let values = (0..a.n).map(|i| {
-        Vector::from_vec((0..b.m).map(|j| dot(&a.get_row(i), &b.get_col(j))).collect())
-    }).collect();
+    let values = (0..a.n)
+        .map(|i| {
+            Vector::from_vec(
+                (0..b.m)
+                    .map(|j| dot(&a.get_row(i), &b.get_col(j)))
+                    .collect(),
+            )
+        })
+        .collect();
 
-    Matrix { values, n: a.n, m: b.m }
+    Matrix {
+        values,
+        n: a.n,
+        m: b.m,
+    }
 }
 
 pub fn matrix_vector_product(mat: &Matrix, vec: &Vector) -> Vector {
@@ -298,36 +393,67 @@ pub fn matrix_vector_product(mat: &Matrix, vec: &Vector) -> Vector {
 
 fn remove_row(mat: &Matrix, n: usize) -> Matrix {
     // for each Vector in mat, remove the nth element
-    let values = mat.values.iter().map(|row| {
-        let mut new_row = row.values.clone();
-        new_row.remove(n);
-        Vector::from_vec(new_row)
-    }).collect();
+    let values = mat
+        .values
+        .iter()
+        .map(|row| {
+            let mut new_row = row.values.clone();
+            new_row.remove(n);
+            Vector::from_vec(new_row)
+        })
+        .collect();
 
-    Matrix { values, n: mat.n, m: mat.m - 1 }
+    Matrix {
+        values,
+        n: mat.n,
+        m: mat.m - 1,
+    }
 }
 
 fn remove_col(mat: &Matrix, m: usize) -> Matrix {
     // remove the mth Vector in mat
-    let values = mat.values.iter().enumerate().filter(|(i, _)| *i != m).map(|(_, row)| row.clone()).collect();
-    Matrix { values, n: mat.n - 1, m: mat.m }
+    let values = mat
+        .values
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != m)
+        .map(|(_, row)| row.clone())
+        .collect();
+    Matrix {
+        values,
+        n: mat.n - 1,
+        m: mat.m,
+    }
 }
 
-pub fn matrix_cofactors(mat: &Matrix)  -> Matrix{
-    let values = (0..mat.m).map(|j| {
-        (0..mat.n).map(|i| {
-            let minor = remove_col(&remove_row(mat, i), j);
-            let sign = if (i + j) % 2 == 0 { 1.0 } else { -1.0 };
-            sign * minor.det()
-        }).collect()
-    }).map(|x| Vector::from_vec(x)).collect();
+pub fn matrix_cofactors(mat: &Matrix) -> Matrix {
+    let values = (0..mat.m)
+        .map(|j| {
+            (0..mat.n)
+                .map(|i| {
+                    let minor = remove_col(&remove_row(mat, i), j);
+                    let sign = if (i + j) % 2 == 0 { 1.0 } else { -1.0 };
+                    sign * minor.det()
+                })
+                .collect()
+        })
+        .map(Vector::from_vec)
+        .collect();
 
-    Matrix { values, n: mat.n, m: mat.m }
+    Matrix {
+        values,
+        n: mat.n,
+        m: mat.m,
+    }
 }
 
 pub fn matrix_inverse(mat: &Matrix) -> Matrix {
     // TODO
-    Matrix { values: Vec::new(), n: 0, m: 0 }
+    Matrix {
+        values: Vec::new(),
+        n: 0,
+        m: 0,
+    }
 }
 
 fn cramer(mat: &Matrix, b: &Vector, i: usize) -> f64 {
@@ -335,7 +461,7 @@ fn cramer(mat: &Matrix, b: &Vector, i: usize) -> f64 {
     ai.replace_row(i, b);
 
     ai.det() / mat.det()
-} 
+}
 
 fn scale_row(mat: &Matrix, i: usize, factor: f64) -> Matrix {
     let mut result = mat.clone();
@@ -549,7 +675,11 @@ mod tests {
 
     #[test]
     fn test_matrix_determinant_r3() {
-        let a = Matrix::from_vec(vec![vec![6.0, 1.0, 1.0], vec![4.0, -2.0, 5.0], vec![2.0, 8.0, 7.0]]);
+        let a = Matrix::from_vec(vec![
+            vec![6.0, 1.0, 1.0],
+            vec![4.0, -2.0, 5.0],
+            vec![2.0, 8.0, 7.0],
+        ]);
         let det = a.det();
         assert_eq!(det, -306.0);
     }
