@@ -1,3 +1,5 @@
+// TODO: fix indexing, n, m tests
+
 use std::fmt;
 
 #[derive(Clone)]
@@ -6,10 +8,16 @@ pub struct Vector {
     n: usize,
 }
 
+#[derive(Clone)]
 pub struct Matrix {
     values: Vec<Vector>,
     n: usize,
     m: usize,
+}
+
+pub struct System {
+    a: Matrix,
+    b: Vector,
 }
 
 impl Vector {
@@ -59,14 +67,14 @@ impl Matrix {
     }
 
     pub fn from_vec(values: Vec<Vec<f64>>) -> Self {
-        let n = values.len();
-        let m = values[0].len();
+        let m = values.len();
+        let n = values[0].len();
         Matrix { values: values.iter().map(|x| Vector::from_vec(x.to_vec())).collect(), n, m }
     }
 
     pub fn from_vector(values: Vec<Vector>) -> Self {
-        let n = values.len();
-        let m = values[0].size();
+        let m = values.len();
+        let n = values[0].size();
         Matrix { values, n, m }
     }
 
@@ -103,6 +111,14 @@ impl Matrix {
         self.values[j].set(i, value);
     }
 
+    fn replace_row(&mut self, i: usize, row: &Vector) {
+        if i > self.n {
+            panic!("Index out of bounds");
+        }
+
+        self.values[i] = row.clone();
+    }
+
     pub fn size(&self) -> (usize, usize) {
         return (self.n, self.m);
     }
@@ -130,6 +146,50 @@ impl Matrix {
         }
 
         return det;
+    }
+
+    pub fn is_rref(&self) -> bool {
+        // check each column
+        for j in 0..self.m {
+            let mut found_one = false;
+            for i in 0..self.n {
+                if self.get(i, j) == 1.0 {
+                    if found_one {
+                        return false;
+                    }
+
+                    found_one = true;
+                } else if self.get(i, j) != 0.0 {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+}
+
+impl System {
+    pub fn new(a: Matrix, b: Vector) -> Self {
+        System { a, b }
+    }
+
+    pub fn new_homogenous(a: Matrix) -> Self {
+        let m = a.size().1;
+        System { a, b: Vector { values: vec![0.0; m], n: m} }
+    }
+
+    pub fn solve(&self) -> Vector {
+        // if square, use cramer's rule
+        let mut result = Vec::new();
+        if self.a.size().0 == self.a.size().1 {
+            for i in 0..self.a.size().0 {
+                result.push(cramer(&self.a, &self.b, i));
+            }
+        }
+        // otherwise, todo
+
+        Vector::from_vec(result)
     }
 }
 
@@ -265,8 +325,84 @@ pub fn matrix_cofactors(mat: &Matrix)  -> Matrix{
     Matrix { values, n: mat.n, m: mat.m }
 }
 
+pub fn matrix_inverse(mat: &Matrix) -> Matrix {
+    // TODO
+    Matrix { values: Vec::new(), n: 0, m: 0 }
+}
+
+fn cramer(mat: &Matrix, b: &Vector, i: usize) -> f64 {
+    let mut ai = mat.clone();
+    ai.replace_row(i, b);
+
+    ai.det() / mat.det()
+} 
+
+fn scale_row(mat: &Matrix, i: usize, factor: f64) -> Matrix {
+    let mut result = mat.clone();
+    for j in 0..mat.m {
+        result.set(i, j, mat.get(i, j) * factor);
+    }
+
+    result
+}
+
+fn add_row(mat: &Matrix, i: usize, j: usize, factor: f64) -> Matrix {
+    let mut result = mat.clone();
+    for k in 0..mat.m {
+        result.set(i, k, mat.get(i, k) + factor * mat.get(j, k));
+    }
+
+    result
+}
+
+fn swap_rows(mat: &Matrix, i: usize, j: usize) -> Matrix {
+    let mut result = mat.clone();
+    for k in 0..mat.m {
+        let temp = result.get(i, k);
+        result.set(i, k, result.get(j, k));
+        result.set(j, k, temp);
+    }
+
+    result
+}
+
+// TODO: fix
+pub fn rref(mat: &Matrix) -> Matrix {
+    let mut result = mat.clone();
+    while !result.is_rref() {
+        // find the first non-zero element in the first column
+        let mut curr = 0;
+        let mut i = 0;
+        while result.get(i, 0) == 0.0 {
+            i += 1;
+        }
+
+        // scale the row so that the first element is 1
+        let factor = 1.0 / result.get(i, 0);
+        result = scale_row(&result, i, factor);
+
+        // for each row, add the scaled row to it
+        for j in 0..result.n {
+            if j != i {
+                let factor = -result.get(j, 0);
+                result = add_row(&result, j, i, factor);
+            }
+        }
+        curr += i;
+
+        // swap the row with the first row
+        if i != curr {
+            result = swap_rows(&result, curr, i);
+        }
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use super::*;
 
     #[test]
@@ -436,5 +572,14 @@ mod tests {
     fn printing_matrix() {
         let m = Matrix::from_vec(vec![vec![1.0, 2.0], vec![3.0, 4.0]]);
         assert_eq!(format!("{}", m), "[[1, 2]\n[3, 4]]");
+    }
+
+    #[test]
+    fn test_rref() {
+        let a = Matrix::from_vec(vec![vec![1.0, 4.0], vec![2.0, 5.0], vec![3.0, 6.0]]);
+        let b = rref(&a);
+        assert_eq!(b.values[0].values, vec![1.0, 0.0]);
+        assert_eq!(b.values[1].values, vec![0.0, 1.0]);
+        assert_eq!(b.values[2].values, vec![-1.0, 2.0]);
     }
 }
